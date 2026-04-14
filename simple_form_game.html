@@ -3,54 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>かんたん数あてゲーム</title>
+    <title>強化版 数あてゲーム</title>
     <style>
+      :root {
+        color-scheme: light;
+      }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         margin: 0;
         padding: 24px;
-        background: #f5f7fb;
+        background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 60%);
         color: #1f2937;
       }
 
       .card {
-        max-width: 420px;
+        max-width: 520px;
         margin: 0 auto;
         background: #ffffff;
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 20px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
       }
 
       h1 {
         margin-top: 0;
+        margin-bottom: 8px;
         font-size: 1.4rem;
       }
 
-      form {
+      p {
+        margin-top: 0;
+      }
+
+      .config,
+      .guess-area {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .row {
         display: flex;
         gap: 8px;
+        align-items: center;
+      }
+
+      .row label {
+        width: 88px;
+        font-size: 0.92rem;
+        color: #334155;
       }
 
       input,
+      select,
       button {
         font-size: 1rem;
         padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
       }
 
-      input {
-        flex: 1;
+      button {
+        cursor: pointer;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+      }
+
+      button.secondary {
+        background: #475569;
+      }
+
+      button:hover {
+        opacity: 0.94;
       }
 
       .status {
-        margin-top: 12px;
-        font-weight: 600;
+        margin: 10px 0;
+        font-weight: 700;
       }
 
-      .sub {
-        margin-top: 8px;
-        color: #4b5563;
-        font-size: 0.9rem;
+      .stats {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        color: #475569;
+        font-size: 0.95rem;
+      }
+
+      .history {
+        margin-top: 14px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 10px;
+      }
+
+      .history ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+        max-height: 130px;
+        overflow: auto;
       }
 
       .test {
@@ -67,20 +119,49 @@
       .ng {
         color: #b91c1c;
       }
+
+      .warn {
+        color: #b45309;
+      }
     </style>
   </head>
   <body>
     <main class="card">
-      <h1>1〜5の数あてゲーム</h1>
-      <p>フォームに数字を入力して「判定」を押してください。</p>
+      <h1>強化版 数あてゲーム</h1>
+      <p>難易度を選んで、制限回数以内に正解を目指しましょう。</p>
 
-      <form id="guess-form" autocomplete="off">
-        <input id="guess-input" type="number" min="1" max="5" required placeholder="1〜5" />
-        <button type="submit">判定</button>
+      <section class="config">
+        <div class="row">
+          <label for="difficulty">難易度</label>
+          <select id="difficulty">
+            <option value="easy">かんたん (1〜10 / 7回)</option>
+            <option value="normal" selected>ふつう (1〜30 / 8回)</option>
+            <option value="hard">むずかしい (1〜70 / 9回)</option>
+          </select>
+          <button id="new-game" class="secondary" type="button">新しいゲーム</button>
+        </div>
+      </section>
+
+      <form id="guess-form" class="guess-area" autocomplete="off">
+        <div class="row">
+          <label for="guess-input">予想値</label>
+          <input id="guess-input" type="number" required placeholder="数字を入力" />
+          <button type="submit">判定</button>
+        </div>
       </form>
 
-      <p id="status" class="status">挑戦してみよう！</p>
-      <p id="tries" class="sub">試行回数: 0</p>
+      <p id="status" class="status">「新しいゲーム」で開始してください。</p>
+      <div class="stats">
+        <span id="range-info">範囲: -</span>
+        <span id="tries">試行回数: 0</span>
+        <span id="remaining">残り回数: -</span>
+        <span id="score">スコア: 0</span>
+      </div>
+
+      <section class="history">
+        <strong>履歴</strong>
+        <ol id="history-list"></ol>
+      </section>
 
       <section class="test">
         <button id="run-test" type="button">テスト実行</button>
@@ -89,67 +170,173 @@
     </main>
 
     <script>
-      function evaluateGuess(target, guess) {
-        if (!Number.isInteger(guess) || guess < 1 || guess > 5) {
-          return "1〜5の整数を入力してください";
+      const LEVELS = {
+        easy: { min: 1, max: 10, maxTries: 7, scoreBonus: 10 },
+        normal: { min: 1, max: 30, maxTries: 8, scoreBonus: 20 },
+        hard: { min: 1, max: 70, maxTries: 9, scoreBonus: 30 }
+      };
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function evaluateGuess(target, guess, config) {
+        if (!Number.isInteger(guess)) {
+          return { type: "invalid", message: "整数を入力してください" };
+        }
+        if (guess < config.min || guess > config.max) {
+          return { type: "invalid", message: `${config.min}〜${config.max}の範囲で入力してください` };
         }
         if (guess === target) {
-          return "正解！";
+          return { type: "correct", message: "正解！" };
         }
-        return guess < target ? "もっと大きいです" : "もっと小さいです";
+        const diff = Math.abs(target - guess);
+        const nearHint = diff <= 2 ? "（おしい！）" : "";
+        if (guess < target) {
+          return { type: "low", message: `もっと大きいです ${nearHint}`.trim() };
+        }
+        return { type: "high", message: `もっと小さいです ${nearHint}`.trim() };
       }
 
       function runSelfTest() {
+        const cfg = { min: 1, max: 10 };
         const cases = [
-          { target: 3, guess: 3, expected: "正解！" },
-          { target: 3, guess: 1, expected: "もっと大きいです" },
-          { target: 3, guess: 5, expected: "もっと小さいです" },
-          { target: 3, guess: 0, expected: "1〜5の整数を入力してください" },
-          { target: 3, guess: 2.5, expected: "1〜5の整数を入力してください" }
+          { target: 7, guess: 7, type: "correct" },
+          { target: 7, guess: 3, type: "low" },
+          { target: 7, guess: 9, type: "high" },
+          { target: 7, guess: 11, type: "invalid" },
+          { target: 7, guess: 5.5, type: "invalid" }
         ];
 
-        for (const testCase of cases) {
-          const actual = evaluateGuess(testCase.target, testCase.guess);
-          if (actual !== testCase.expected) {
-            throw new Error(
-              `失敗: target=${testCase.target}, guess=${testCase.guess}, expected=${testCase.expected}, actual=${actual}`
-            );
+        for (const c of cases) {
+          const actual = evaluateGuess(c.target, c.guess, cfg);
+          if (actual.type !== c.type) {
+            throw new Error(`失敗: target=${c.target}, guess=${c.guess}, expected=${c.type}, actual=${actual.type}`);
+          }
+        }
+
+        for (let i = 0; i < 50; i += 1) {
+          const n = randomInt(3, 5);
+          if (![3, 4, 5].includes(n)) {
+            throw new Error(`randomInt が範囲外の値を返しました: ${n}`);
           }
         }
       }
 
-      let target = Math.floor(Math.random() * 5) + 1;
-      let tries = 0;
+      const state = {
+        config: LEVELS.normal,
+        target: null,
+        tries: 0,
+        score: 0,
+        finished: true,
+        history: []
+      };
 
+      const difficulty = document.getElementById("difficulty");
       const form = document.getElementById("guess-form");
       const input = document.getElementById("guess-input");
       const status = document.getElementById("status");
       const triesText = document.getElementById("tries");
+      const remainingText = document.getElementById("remaining");
+      const rangeInfo = document.getElementById("range-info");
+      const scoreText = document.getElementById("score");
+      const historyList = document.getElementById("history-list");
+      const newGameButton = document.getElementById("new-game");
       const testButton = document.getElementById("run-test");
       const testResult = document.getElementById("test-result");
 
-      form.addEventListener("submit", function (event) {
+      function renderHistory() {
+        historyList.innerHTML = "";
+        state.history.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          historyList.appendChild(li);
+        });
+      }
+
+      function renderStats() {
+        const remain = Math.max(state.config.maxTries - state.tries, 0);
+        rangeInfo.textContent = `範囲: ${state.config.min}〜${state.config.max}`;
+        triesText.textContent = `試行回数: ${state.tries}`;
+        remainingText.textContent = `残り回数: ${remain}`;
+        scoreText.textContent = `スコア: ${state.score}`;
+        input.min = String(state.config.min);
+        input.max = String(state.config.max);
+        input.placeholder = `${state.config.min}〜${state.config.max}`;
+      }
+
+      function startGame() {
+        state.config = LEVELS[difficulty.value];
+        state.target = randomInt(state.config.min, state.config.max);
+        state.tries = 0;
+        state.finished = false;
+        state.history = [];
+        status.textContent = `ゲーム開始！ ${state.config.min}〜${state.config.max} の数字を当ててください。`;
+        status.className = "status";
+        renderStats();
+        renderHistory();
+        input.value = "";
+        input.focus();
+      }
+
+      function finishGame(win) {
+        state.finished = true;
+        if (win) {
+          const bonus = state.config.scoreBonus + Math.max(state.config.maxTries - state.tries, 0) * 2;
+          state.score += bonus;
+          status.textContent = `クリア！ +${bonus}点。次も挑戦してみよう。`;
+          status.className = "status ok";
+        } else {
+          status.textContent = `ゲームオーバー。正解は ${state.target} でした。`;
+          status.className = "status ng";
+        }
+        renderStats();
+      }
+
+      form.addEventListener("submit", (event) => {
         event.preventDefault();
 
+        if (state.finished) {
+          status.textContent = "先に「新しいゲーム」を押してください。";
+          status.className = "status warn";
+          return;
+        }
+
         const guess = Number(input.value);
-        const result = evaluateGuess(target, guess);
-        tries += 1;
+        const result = evaluateGuess(state.target, guess, state.config);
 
-        status.textContent = result;
-        triesText.textContent = `試行回数: ${tries}`;
+        if (result.type === "invalid") {
+          status.textContent = result.message;
+          status.className = "status warn";
+          input.focus();
+          return;
+        }
 
-        if (result === "正解！") {
-          target = Math.floor(Math.random() * 5) + 1;
-          tries = 0;
-          triesText.textContent = "試行回数: 0";
-          status.textContent += " 次の問題を生成しました。";
+        state.tries += 1;
+        const remain = state.config.maxTries - state.tries;
+        state.history.unshift(`${state.tries}回目: ${guess} → ${result.message}`);
+        if (state.history.length > 12) {
+          state.history.pop();
+        }
+
+        status.textContent = result.message;
+        status.className = result.type === "correct" ? "status ok" : "status";
+        renderStats();
+        renderHistory();
+
+        if (result.type === "correct") {
+          finishGame(true);
+        } else if (remain <= 0) {
+          finishGame(false);
         }
 
         input.value = "";
         input.focus();
       });
 
-      testButton.addEventListener("click", function () {
+      newGameButton.addEventListener("click", startGame);
+
+      testButton.addEventListener("click", () => {
         try {
           runSelfTest();
           testResult.textContent = "テスト成功: すべてのケースを通過しました。";
@@ -159,6 +346,8 @@
           testResult.className = "sub ng";
         }
       });
+
+      renderStats();
     </script>
   </body>
 </html>
