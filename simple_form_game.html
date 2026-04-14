@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>かんたん数あてゲーム</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #f5f7fb;
+        color: #1f2937;
+      }
+
+      .card {
+        max-width: 420px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 1.4rem;
+      }
+
+      form {
+        display: flex;
+        gap: 8px;
+      }
+
+      input,
+      button {
+        font-size: 1rem;
+        padding: 8px 10px;
+      }
+
+      input {
+        flex: 1;
+      }
+
+      .status {
+        margin-top: 12px;
+        font-weight: 600;
+      }
+
+      .sub {
+        margin-top: 8px;
+        color: #4b5563;
+        font-size: 0.9rem;
+      }
+
+      .test {
+        margin-top: 16px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 12px;
+        font-size: 0.9rem;
+      }
+
+      .ok {
+        color: #166534;
+      }
+
+      .ng {
+        color: #b91c1c;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>1〜5の数あてゲーム</h1>
+      <p>フォームに数字を入力して「判定」を押してください。</p>
+
+      <form id="guess-form" autocomplete="off">
+        <input id="guess-input" type="number" min="1" max="5" required placeholder="1〜5" />
+        <button type="submit">判定</button>
+      </form>
+
+      <p id="status" class="status">挑戦してみよう！</p>
+      <p id="tries" class="sub">試行回数: 0</p>
+
+      <section class="test">
+        <button id="run-test" type="button">テスト実行</button>
+        <p id="test-result" class="sub">未実行</p>
+      </section>
+    </main>
+
+    <script>
+      function evaluateGuess(target, guess) {
+        if (!Number.isInteger(guess) || guess < 1 || guess > 5) {
+          return "1〜5の整数を入力してください";
+        }
+        if (guess === target) {
+          return "正解！";
+        }
+        return guess < target ? "もっと大きいです" : "もっと小さいです";
+      }
+
+      function runSelfTest() {
+        const cases = [
+          { target: 3, guess: 3, expected: "正解！" },
+          { target: 3, guess: 1, expected: "もっと大きいです" },
+          { target: 3, guess: 5, expected: "もっと小さいです" },
+          { target: 3, guess: 0, expected: "1〜5の整数を入力してください" },
+          { target: 3, guess: 2.5, expected: "1〜5の整数を入力してください" }
+        ];
+
+        for (const testCase of cases) {
+          const actual = evaluateGuess(testCase.target, testCase.guess);
+          if (actual !== testCase.expected) {
+            throw new Error(
+              `失敗: target=${testCase.target}, guess=${testCase.guess}, expected=${testCase.expected}, actual=${actual}`
+            );
+          }
+        }
+      }
+
+      let target = Math.floor(Math.random() * 5) + 1;
+      let tries = 0;
+
+      const form = document.getElementById("guess-form");
+      const input = document.getElementById("guess-input");
+      const status = document.getElementById("status");
+      const triesText = document.getElementById("tries");
+      const testButton = document.getElementById("run-test");
+      const testResult = document.getElementById("test-result");
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const guess = Number(input.value);
+        const result = evaluateGuess(target, guess);
+        tries += 1;
+
+        status.textContent = result;
+        triesText.textContent = `試行回数: ${tries}`;
+
+        if (result === "正解！") {
+          target = Math.floor(Math.random() * 5) + 1;
+          tries = 0;
+          triesText.textContent = "試行回数: 0";
+          status.textContent += " 次の問題を生成しました。";
+        }
+
+        input.value = "";
+        input.focus();
+      });
+
+      testButton.addEventListener("click", function () {
+        try {
+          runSelfTest();
+          testResult.textContent = "テスト成功: すべてのケースを通過しました。";
+          testResult.className = "sub ok";
+        } catch (error) {
+          testResult.textContent = `テスト失敗: ${error.message}`;
+          testResult.className = "sub ng";
+        }
+      });
+    </script>
+  </body>
+</html>
