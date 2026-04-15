@@ -2,352 +2,430 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>強化版 数あてゲーム</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Excel VBA 実践ナレッジ＆挙動デモ</title>
     <style>
       :root {
-        color-scheme: light;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --ink: #0f172a;
+        --sub: #475569;
+        --accent: #0ea5e9;
+        --ok: #166534;
+        --warn: #b45309;
+        --border: #dbe5f0;
       }
 
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         margin: 0;
-        padding: 24px;
-        background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 60%);
-        color: #1f2937;
+        padding: 0;
+        background: linear-gradient(180deg, #e2e8f0 0%, var(--bg) 34%);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
       }
 
-      .card {
-        max-width: 520px;
+      .wrap {
+        max-width: 1100px;
         margin: 0 auto;
-        background: #ffffff;
+        padding: calc(18px + env(safe-area-inset-top)) 14px calc(26px + env(safe-area-inset-bottom));
+      }
+
+      .hero,
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 20px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
       }
 
-      h1 {
-        margin-top: 0;
-        margin-bottom: 8px;
-        font-size: 1.4rem;
-      }
-
-      p {
-        margin-top: 0;
-      }
-
-      .config,
-      .guess-area {
-        display: grid;
-        gap: 10px;
+      .hero {
+        padding: 18px;
         margin-bottom: 14px;
       }
 
-      .row {
-        display: flex;
-        gap: 8px;
-        align-items: center;
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.35;
       }
 
-      .row label {
-        width: 88px;
-        font-size: 0.92rem;
-        color: #334155;
+      h1 {
+        font-size: 1.42rem;
+        margin-bottom: 6px;
+      }
+
+      .sub {
+        color: var(--sub);
+        margin: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 10px 0;
+      }
+
+      .chip {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.84rem;
+      }
+
+      .controls {
+        display: grid;
+        gap: 8px;
       }
 
       input,
       select,
+      textarea,
       button {
-        font-size: 1rem;
-        padding: 8px 10px;
-        border-radius: 8px;
+        width: 100%;
         border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 0.95rem;
       }
 
       button {
         cursor: pointer;
-        background: #2563eb;
-        color: #fff;
+        font-weight: 700;
+        background: var(--accent);
         border: none;
+        color: #fff;
       }
 
       button.secondary {
-        background: #475569;
+        background: #334155;
       }
 
-      button:hover {
-        opacity: 0.94;
-      }
-
-      .status {
-        margin: 10px 0;
-        font-weight: 700;
-      }
-
-      .stats {
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-        color: #475569;
-        font-size: 0.95rem;
-      }
-
-      .history {
-        margin-top: 14px;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 10px;
-      }
-
-      .history ol {
-        margin: 6px 0 0;
-        padding-left: 20px;
-        max-height: 130px;
-        overflow: auto;
-      }
-
-      .test {
-        margin-top: 16px;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 12px;
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
         font-size: 0.9rem;
       }
 
-      .ok {
-        color: #166534;
+      th,
+      td {
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 8px 6px;
+        vertical-align: top;
       }
 
-      .ng {
-        color: #b91c1c;
+      th {
+        color: #334155;
+        font-size: 0.85rem;
+      }
+
+      .status {
+        padding: 10px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        font-size: 0.9rem;
+        margin-top: 10px;
+      }
+
+      .ok {
+        color: var(--ok);
       }
 
       .warn {
-        color: #b45309;
+        color: var(--warn);
+      }
+
+      .code {
+        background: #0f172a;
+        color: #dbeafe;
+        border-radius: 12px;
+        padding: 12px;
+        overflow: auto;
+        white-space: pre;
+        font-size: 0.85rem;
+        line-height: 1.45;
+      }
+
+      .demo-box {
+        border: 1px dashed #94a3b8;
+        border-radius: 12px;
+        padding: 10px;
+        margin-top: 8px;
+        background: #f8fafc;
+      }
+
+      .steps {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      @media (min-width: 860px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .span-2 {
+          grid-column: span 2;
+        }
       }
     </style>
   </head>
   <body>
-    <main class="card">
-      <h1>強化版 数あてゲーム</h1>
-      <p>難易度を選んで、制限回数以内に正解を目指しましょう。</p>
+    <main class="wrap">
+      <header class="hero">
+        <h1>Excel VBA 実践ナレッジ＆挙動デモ</h1>
+        <p class="sub">iOS版 Chrome を含むスマートフォンで操作しやすい、網羅型のVBA学習サイトです。</p>
+        <div class="chips" id="stats-chips"></div>
+      </header>
 
-      <section class="config">
-        <div class="row">
-          <label for="difficulty">難易度</label>
-          <select id="difficulty">
-            <option value="easy">かんたん (1〜10 / 7回)</option>
-            <option value="normal" selected>ふつう (1〜30 / 8回)</option>
-            <option value="hard">むずかしい (1〜70 / 9回)</option>
-          </select>
-          <button id="new-game" class="secondary" type="button">新しいゲーム</button>
-        </div>
-      </section>
+      <section class="grid">
+        <article class="card">
+          <h2>1) トピック検索（網羅カタログ）</h2>
+          <p class="sub">キーワードと分類で、VBA文法・オブジェクト・実務パターンを絞り込みます。</p>
+          <div class="controls">
+            <input id="search" type="search" placeholder="例: Range / ループ / エラー処理" />
+            <select id="category"></select>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>分類</th>
+                <th>項目</th>
+                <th>要点</th>
+              </tr>
+            </thead>
+            <tbody id="catalog-body"></tbody>
+          </table>
+          <p id="catalog-status" class="status">読み込み中...</p>
+        </article>
 
-      <form id="guess-form" class="guess-area" autocomplete="off">
-        <div class="row">
-          <label for="guess-input">予想値</label>
-          <input id="guess-input" type="number" required placeholder="数字を入力" />
-          <button type="submit">判定</button>
-        </div>
-      </form>
+        <article class="card">
+          <h2>2) 実行挙動デモ（擬似実行）</h2>
+          <p class="sub">実際のVBAコード例を選ぶと、処理ステップと結果を動的表示します。</p>
+          <div class="controls">
+            <select id="scenario"></select>
+            <button id="play" type="button">デモ再生</button>
+          </div>
+          <div id="scenario-code" class="code" aria-live="polite"></div>
+          <div class="demo-box">
+            <strong>実行ステップ</strong>
+            <ol id="steps" class="steps"></ol>
+          </div>
+          <p id="demo-status" class="status">シナリオを選択して再生してください。</p>
+        </article>
 
-      <p id="status" class="status">「新しいゲーム」で開始してください。</p>
-      <div class="stats">
-        <span id="range-info">範囲: -</span>
-        <span id="tries">試行回数: 0</span>
-        <span id="remaining">残り回数: -</span>
-        <span id="score">スコア: 0</span>
-      </div>
-
-      <section class="history">
-        <strong>履歴</strong>
-        <ol id="history-list"></ol>
-      </section>
-
-      <section class="test">
-        <button id="run-test" type="button">テスト実行</button>
-        <p id="test-result" class="sub">未実行</p>
+        <article class="card span-2">
+          <h2>3) よく使うVBAテンプレート</h2>
+          <p class="sub">現場で頻出のコードをコピーし、用途に合わせて編集できます。</p>
+          <select id="template-select"></select>
+          <textarea id="template-code" rows="11" spellcheck="false"></textarea>
+          <button class="secondary" id="copy-template" type="button">テンプレートをコピー</button>
+          <p id="copy-status" class="status">テンプレートを選択してください。</p>
+        </article>
       </section>
     </main>
 
     <script>
-      const LEVELS = {
-        easy: { min: 1, max: 10, maxTries: 7, scoreBonus: 10 },
-        normal: { min: 1, max: 30, maxTries: 8, scoreBonus: 20 },
-        hard: { min: 1, max: 70, maxTries: 9, scoreBonus: 30 }
+      const catalog = [
+        ["基礎構文", "Option Explicit", "変数の暗黙宣言を防ぎ、保守性を向上"],
+        ["基礎構文", "If / Select Case", "条件分岐の基本。可読性重視で使い分け"],
+        ["制御", "For / For Each", "固定回数とコレクション走査を分離して設計"],
+        ["制御", "Do While / Do Until", "終了条件の判定タイミングを意識"],
+        ["オブジェクト", "Workbook / Worksheet", "対象ブック・シートの明示参照が必須"],
+        ["オブジェクト", "Range / Cells", "Rangeは可読性、Cellsは動的座標に強い"],
+        ["配列", "Variant配列", "セルI/O回数を減らし高速化"],
+        ["エラー処理", "On Error GoTo", "処理中断時の復旧とログ記録"],
+        ["エラー処理", "Errオブジェクト", "番号・内容を取得して原因分析"],
+        ["速度改善", "ScreenUpdating", "画面更新停止で処理時間を削減"],
+        ["速度改善", "Calculation", "再計算モード制御でバッチ処理を高速化"],
+        ["実務", "CSV取込", "文字コード・区切り文字・ヘッダー検証"],
+        ["実務", "ピボット更新", "データソース再設定→RefreshTable"],
+        ["実務", "メール送信(Outlook)", "参照設定とセキュリティ制約を確認"],
+        ["保守", "モジュール分割", "責務単位で関数化し再利用を促進"],
+        ["テスト", "Debug.Print", "イミディエイトに中間値を出力して検証"],
+        ["テスト", "ブレークポイント", "実行停止して状態確認"],
+        ["フォーム", "UserForm", "入力UIと業務ロジックを分離"],
+        ["外部連携", "ADO", "DB接続のパラメータ化で安全性を向上"],
+        ["外部連携", "FileSystemObject", "フォルダ巡回・ログ保存の定番"],
+      ];
+
+      const scenarios = [
+        {
+          name: "最終行までループして集計",
+          code: `Sub SumSales()\n  Dim lastRow As Long\n  Dim i As Long\n  Dim total As Double\n\n  lastRow = Cells(Rows.Count, 1).End(xlUp).Row\n  For i = 2 To lastRow\n    total = total + Cells(i, 3).Value\n  Next i\n\n  Range("F2").Value = total\nEnd Sub`,
+          steps: [
+            "A列の最終行を検出（空行を考慮）",
+            "2行目から最終行まで繰り返し",
+            "C列売上を total に加算",
+            "F2に集計結果を出力"
+          ],
+          result: "結果: 例データ(120, 300, 80)なら F2=500"
+        },
+        {
+          name: "エラー処理付きファイル読込",
+          code: `Sub LoadCsv()\n  On Error GoTo EH\n  Workbooks.Open "C:\\data\\input.csv"\n  MsgBox "読込成功"\n  Exit Sub\nEH:\n  MsgBox "失敗: " & Err.Description\nEnd Sub`,
+          steps: [
+            "処理開始時に例外ジャンプ先を設定",
+            "CSVを開く処理を実行",
+            "成功時は完了メッセージ",
+            "失敗時はErr.Descriptionを表示"
+          ],
+          result: "結果: ファイル欠損時はユーザーへ明確な失敗理由を通知"
+        },
+        {
+          name: "配列で高速書き戻し",
+          code: `Sub FastWrite()\n  Dim data As Variant\n  data = Range("A2:C1000").Value\n  data(1, 3) = "更新済"\n  Range("A2:C1000").Value = data\nEnd Sub`,
+          steps: [
+            "対象範囲をVariant配列へ一括取得",
+            "配列上で値を更新（メモリ上で高速）",
+            "最後にシートへ一括反映"
+          ],
+          result: "結果: セル単位操作より高速化しやすい"
+        }
+      ];
+
+      const templates = {
+        "標準: 速度改善ひな形": `Sub OptimizedTask()\n  On Error GoTo EH\n  Application.ScreenUpdating = False\n  Application.Calculation = xlCalculationManual\n\n  ' TODO: メイン処理\n\nFinally:\n  Application.Calculation = xlCalculationAutomatic\n  Application.ScreenUpdating = True\n  Exit Sub\nEH:\n  MsgBox "Error: " & Err.Description\n  Resume Finally\nEnd Sub`,
+        "標準: シート存在チェック": `Function SheetExists(ByVal sheetName As String) As Boolean\n  Dim ws As Worksheet\n  On Error Resume Next\n  Set ws = ThisWorkbook.Worksheets(sheetName)\n  On Error GoTo 0\n  SheetExists = Not ws Is Nothing\nEnd Function`,
+        "標準: ログ出力": `Sub WriteLog(ByVal msg As String)\n  Dim ws As Worksheet\n  Set ws = ThisWorkbook.Worksheets("Log")\n  ws.Cells(ws.Rows.Count, 1).End(xlUp).Offset(1, 0).Value = Now\n  ws.Cells(ws.Rows.Count, 2).End(xlUp).Offset(1, 0).Value = msg\nEnd Sub`
       };
 
-      function randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+      const search = document.getElementById("search");
+      const category = document.getElementById("category");
+      const catalogBody = document.getElementById("catalog-body");
+      const catalogStatus = document.getElementById("catalog-status");
+      const chips = document.getElementById("stats-chips");
+
+      const scenario = document.getElementById("scenario");
+      const code = document.getElementById("scenario-code");
+      const steps = document.getElementById("steps");
+      const demoStatus = document.getElementById("demo-status");
+      const play = document.getElementById("play");
+
+      const templateSelect = document.getElementById("template-select");
+      const templateCode = document.getElementById("template-code");
+      const copyTemplate = document.getElementById("copy-template");
+      const copyStatus = document.getElementById("copy-status");
+
+      function buildCategorySelect() {
+        const cats = ["すべて", ...new Set(catalog.map((row) => row[0]))];
+        category.innerHTML = cats
+          .map((c) => `<option value="${c}">${c}</option>`)
+          .join("");
       }
 
-      function evaluateGuess(target, guess, config) {
-        if (!Number.isInteger(guess)) {
-          return { type: "invalid", message: "整数を入力してください" };
-        }
-        if (guess < config.min || guess > config.max) {
-          return { type: "invalid", message: `${config.min}〜${config.max}の範囲で入力してください` };
-        }
-        if (guess === target) {
-          return { type: "correct", message: "正解！" };
-        }
-        const diff = Math.abs(target - guess);
-        const nearHint = diff <= 2 ? "（おしい！）" : "";
-        if (guess < target) {
-          return { type: "low", message: `もっと大きいです ${nearHint}`.trim() };
-        }
-        return { type: "high", message: `もっと小さいです ${nearHint}`.trim() };
-      }
+      function renderCatalog() {
+        const q = search.value.trim().toLowerCase();
+        const selected = category.value;
 
-      function runSelfTest() {
-        const cfg = { min: 1, max: 10 };
-        const cases = [
-          { target: 7, guess: 7, type: "correct" },
-          { target: 7, guess: 3, type: "low" },
-          { target: 7, guess: 9, type: "high" },
-          { target: 7, guess: 11, type: "invalid" },
-          { target: 7, guess: 5.5, type: "invalid" }
-        ];
-
-        for (const c of cases) {
-          const actual = evaluateGuess(c.target, c.guess, cfg);
-          if (actual.type !== c.type) {
-            throw new Error(`失敗: target=${c.target}, guess=${c.guess}, expected=${c.type}, actual=${actual.type}`);
-          }
-        }
-
-        for (let i = 0; i < 50; i += 1) {
-          const n = randomInt(3, 5);
-          if (![3, 4, 5].includes(n)) {
-            throw new Error(`randomInt が範囲外の値を返しました: ${n}`);
-          }
-        }
-      }
-
-      const state = {
-        config: LEVELS.normal,
-        target: null,
-        tries: 0,
-        score: 0,
-        finished: true,
-        history: []
-      };
-
-      const difficulty = document.getElementById("difficulty");
-      const form = document.getElementById("guess-form");
-      const input = document.getElementById("guess-input");
-      const status = document.getElementById("status");
-      const triesText = document.getElementById("tries");
-      const remainingText = document.getElementById("remaining");
-      const rangeInfo = document.getElementById("range-info");
-      const scoreText = document.getElementById("score");
-      const historyList = document.getElementById("history-list");
-      const newGameButton = document.getElementById("new-game");
-      const testButton = document.getElementById("run-test");
-      const testResult = document.getElementById("test-result");
-
-      function renderHistory() {
-        historyList.innerHTML = "";
-        state.history.forEach((item) => {
-          const li = document.createElement("li");
-          li.textContent = item;
-          historyList.appendChild(li);
+        const filtered = catalog.filter(([cat, name, point]) => {
+          const catOk = selected === "すべて" || selected === cat;
+          const text = `${cat} ${name} ${point}`.toLowerCase();
+          return catOk && (!q || text.includes(q));
         });
+
+        catalogBody.innerHTML = filtered
+          .map(
+            ([cat, name, point]) =>
+              `<tr><td>${cat}</td><td><strong>${name}</strong></td><td>${point}</td></tr>`
+          )
+          .join("");
+
+        catalogStatus.innerHTML =
+          filtered.length > 0
+            ? `<span class="ok">${filtered.length}件ヒット</span> / 全${catalog.length}件`
+            : `<span class="warn">該当なし</span> キーワードを変更してください`;
       }
 
       function renderStats() {
-        const remain = Math.max(state.config.maxTries - state.tries, 0);
-        rangeInfo.textContent = `範囲: ${state.config.min}〜${state.config.max}`;
-        triesText.textContent = `試行回数: ${state.tries}`;
-        remainingText.textContent = `残り回数: ${remain}`;
-        scoreText.textContent = `スコア: ${state.score}`;
-        input.min = String(state.config.min);
-        input.max = String(state.config.max);
-        input.placeholder = `${state.config.min}〜${state.config.max}`;
+        const catCount = new Set(catalog.map((r) => r[0])).size;
+        chips.innerHTML = `
+          <span class="chip">掲載項目: ${catalog.length}</span>
+          <span class="chip">分類数: ${catCount}</span>
+          <span class="chip">挙動デモ: ${scenarios.length}</span>
+          <span class="chip">テンプレート: ${Object.keys(templates).length}</span>
+        `;
       }
 
-      function startGame() {
-        state.config = LEVELS[difficulty.value];
-        state.target = randomInt(state.config.min, state.config.max);
-        state.tries = 0;
-        state.finished = false;
-        state.history = [];
-        status.textContent = `ゲーム開始！ ${state.config.min}〜${state.config.max} の数字を当ててください。`;
-        status.className = "status";
-        renderStats();
-        renderHistory();
-        input.value = "";
-        input.focus();
+      function buildScenarios() {
+        scenario.innerHTML = scenarios
+          .map((s, i) => `<option value="${i}">${s.name}</option>`)
+          .join("");
+        showScenario(0);
       }
 
-      function finishGame(win) {
-        state.finished = true;
-        if (win) {
-          const bonus = state.config.scoreBonus + Math.max(state.config.maxTries - state.tries, 0) * 2;
-          state.score += bonus;
-          status.textContent = `クリア！ +${bonus}点。次も挑戦してみよう。`;
-          status.className = "status ok";
-        } else {
-          status.textContent = `ゲームオーバー。正解は ${state.target} でした。`;
-          status.className = "status ng";
-        }
-        renderStats();
+      function showScenario(index) {
+        const s = scenarios[index];
+        code.textContent = s.code;
+        steps.innerHTML = "";
+        demoStatus.textContent = "再生ボタンでステップ表示します。";
       }
 
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-
-        if (state.finished) {
-          status.textContent = "先に「新しいゲーム」を押してください。";
-          status.className = "status warn";
-          return;
+      async function playScenario() {
+        const s = scenarios[Number(scenario.value)];
+        steps.innerHTML = "";
+        for (const step of s.steps) {
+          const li = document.createElement("li");
+          li.textContent = step;
+          steps.appendChild(li);
+          await new Promise((resolve) => setTimeout(resolve, 420));
         }
+        demoStatus.innerHTML = `<span class="ok">${s.result}</span>`;
+      }
 
-        const guess = Number(input.value);
-        const result = evaluateGuess(state.target, guess, state.config);
+      function buildTemplates() {
+        const keys = Object.keys(templates);
+        templateSelect.innerHTML = keys
+          .map((k) => `<option value="${k}">${k}</option>`)
+          .join("");
+        templateCode.value = templates[keys[0]];
+      }
 
-        if (result.type === "invalid") {
-          status.textContent = result.message;
-          status.className = "status warn";
-          input.focus();
-          return;
-        }
-
-        state.tries += 1;
-        const remain = state.config.maxTries - state.tries;
-        state.history.unshift(`${state.tries}回目: ${guess} → ${result.message}`);
-        if (state.history.length > 12) {
-          state.history.pop();
-        }
-
-        status.textContent = result.message;
-        status.className = result.type === "correct" ? "status ok" : "status";
-        renderStats();
-        renderHistory();
-
-        if (result.type === "correct") {
-          finishGame(true);
-        } else if (remain <= 0) {
-          finishGame(false);
-        }
-
-        input.value = "";
-        input.focus();
-      });
-
-      newGameButton.addEventListener("click", startGame);
-
-      testButton.addEventListener("click", () => {
+      async function copySelectedTemplate() {
         try {
-          runSelfTest();
-          testResult.textContent = "テスト成功: すべてのケースを通過しました。";
-          testResult.className = "sub ok";
-        } catch (error) {
-          testResult.textContent = `テスト失敗: ${error.message}`;
-          testResult.className = "sub ng";
+          await navigator.clipboard.writeText(templateCode.value);
+          copyStatus.innerHTML = '<span class="ok">コピーしました。Excel VBAエディタへ貼り付けできます。</span>';
+        } catch {
+          copyStatus.innerHTML = '<span class="warn">コピー失敗。長押しで手動コピーしてください（iOS端末向け）。</span>';
         }
-      });
+      }
 
+      buildCategorySelect();
       renderStats();
+      renderCatalog();
+      buildScenarios();
+      buildTemplates();
+
+      search.addEventListener("input", renderCatalog);
+      category.addEventListener("change", renderCatalog);
+      scenario.addEventListener("change", (e) => showScenario(Number(e.target.value)));
+      play.addEventListener("click", playScenario);
+      templateSelect.addEventListener("change", (e) => {
+        templateCode.value = templates[e.target.value];
+        copyStatus.textContent = "テンプレート内容を編集後にコピーできます。";
+      });
+      copyTemplate.addEventListener("click", copySelectedTemplate);
     </script>
   </body>
 </html>
